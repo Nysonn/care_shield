@@ -326,7 +326,7 @@ class _SignupScreenState extends State<SignupScreen>
                       context,
                       ModalRoute.withName('/onboarding'),
                     );
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, '/home');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,

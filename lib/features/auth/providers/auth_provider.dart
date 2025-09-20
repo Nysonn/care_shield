@@ -5,6 +5,8 @@ import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import 'package:care_shield/services/local_storage_service.dart';
 
+// PROTOTYPE MODE: This authentication system accepts any credentials
+// for demonstration purposes and automatically creates demo users
 class User {
   final String id;
   final String fullName;
@@ -80,23 +82,24 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
   }) async {
-    final users = Hive.box(_usersBox);
+    // For prototype: Accept any credentials and create the user
+    // This bypasses validation checks for demonstration purposes
 
-    // simple uniqueness check
-    final exists = users.values.cast<Map>().any(
-      (u) => u['phone'] == phone || u['email'] == email,
-    );
-    if (exists) {
-      throw Exception('User with this phone/email already exists');
+    if (fullName.trim().isEmpty ||
+        phone.trim().isEmpty ||
+        email.trim().isEmpty ||
+        password.trim().isEmpty) {
+      throw Exception('Please fill in all fields');
     }
 
+    final users = Hive.box(_usersBox);
     final id = const Uuid().v4();
     final hashed = _hashPassword(password);
     final user = User(
       id: id,
-      fullName: fullName,
-      phone: phone,
-      email: email,
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
       passwordHash: hashed,
     );
 
@@ -108,22 +111,31 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> login({required String phone, required String password}) async {
-    final users = Hive.box(_usersBox);
-    final hashed = _hashPassword(password);
+    // For prototype: Accept any credentials and create a demo user
+    // This bypasses actual authentication for demonstration purposes
 
-    final found = users.values.cast<Map>().firstWhere(
-      (u) => u['phone'] == phone && u['passwordHash'] == hashed,
-      orElse: () => {},
-    );
-
-    if (found.isEmpty) {
-      throw Exception('Invalid credentials');
+    if (phone.trim().isEmpty || password.trim().isEmpty) {
+      throw Exception('Please enter both phone number and password');
     }
 
-    final user = User.fromMap(Map<String, dynamic>.from(found));
+    // Create a demo user for prototype purposes
+    final demoUser = User(
+      id: 'demo-user-${DateTime.now().millisecondsSinceEpoch}',
+      fullName: 'Demo User',
+      phone: phone.trim(),
+      email: 'demo@careshield.com',
+      passwordHash: _hashPassword(password),
+    );
+
+    // Store the demo user session
     final session = Hive.box(_sessionBox);
-    await session.put('current_user_id', user.id);
-    _currentUser = user;
+    await session.put('current_user_id', demoUser.id);
+
+    // Store user data
+    final users = Hive.box(_usersBox);
+    await users.put(demoUser.id, demoUser.toMap());
+
+    _currentUser = demoUser;
     notifyListeners();
   }
 
