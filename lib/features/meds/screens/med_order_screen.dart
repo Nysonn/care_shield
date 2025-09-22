@@ -545,7 +545,7 @@ class _MedOrderScreenState extends State<MedOrderScreen>
                     ),
                   ),
                   child: Text(
-                    'Free Delivery',
+                    'Delivery',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -949,7 +949,7 @@ class _MedOrderScreenState extends State<MedOrderScreen>
             ),
           ],
           LoadingButton(
-            label: 'Place Order (Free Delivery)',
+            label: 'Place Order',
             loading: _loading,
             loadingText: 'Processing order...',
             onPressed: _placeOrder,
