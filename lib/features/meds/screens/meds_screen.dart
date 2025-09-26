@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:care_shield/core/widgets/product_card.dart';
 import '../models/drug.dart';
 import '../providers/meds_provider.dart';
 import 'med_order_screen.dart';
@@ -155,7 +156,7 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'HIV Medications',
+                    'Products',
                     style: TextStyle(
                       color: AppColors.text,
                       fontWeight: FontWeight.w700,
@@ -164,7 +165,7 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                     ),
                   ),
                   Text(
-                    'Manage your prescriptions',
+                    'Browse and order products',
                     style: TextStyle(
                       color: AppColors.text.withOpacity(0.6),
                       fontSize: 14,
@@ -256,7 +257,7 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 8),
               Text(
-                'Order refills or get started as a new patient',
+                'Order refills or browse our health product catalog',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 14,
@@ -298,11 +299,11 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                 child: Opacity(
                   opacity: _staggerAnimation.value,
                   child: _buildActionCard(
-                    title: 'New Patient',
-                    subtitle: 'Get started with your first order',
-                    icon: Icons.person_add,
+                    title: 'Browse Products',
+                    subtitle: 'Explore our health product catalog',
+                    icon: Icons.inventory_2,
                     color: AppColors.secondaryGreen,
-                    onTap: () => _navigateToOrder('New patient'),
+                    onTap: () => _navigateToOrder('New order'),
                   ),
                 ),
               ),
@@ -406,7 +407,7 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Available Medications',
+                      'Products',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -416,7 +417,7 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${meds.drugs.length} medications available',
+                      '${meds.drugs.length} products available',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.text.withOpacity(0.6),
@@ -461,30 +462,14 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
               ],
             ),
             const SizedBox(height: 20),
-            AnimatedBuilder(
-              animation: _staggerAnimation,
-              builder: (context, child) {
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.75,
-                  ),
-                  itemCount: meds.drugs.length,
-                  itemBuilder: (context, index) {
-                    return Transform.translate(
-                      offset: Offset(0, 30 * (1 - _staggerAnimation.value)),
-                      child: Opacity(
-                        opacity: _staggerAnimation.value,
-                        child: _buildMedicationCard(meds.drugs[index], index),
-                      ),
-                    );
-                  },
-                );
-              },
+            Column(
+              children: List.generate(
+                meds.drugs.length,
+                (index) => Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  child: _buildMedicationCard(meds.drugs[index], index),
+                ),
+              ),
             ),
           ],
         ),
@@ -493,7 +478,10 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMedicationCard(Drug drug, int index) {
-    return GestureDetector(
+    return ProductCard(
+      drug: drug,
+      index: index,
+      isCompact: false, // Use full layout for meds screen
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.push(
@@ -504,137 +492,6 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
           ),
         );
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.primaryBlue.withOpacity(0.08),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryBlue.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon with gradient background
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryBlue.withOpacity(0.2),
-                      AppColors.primaryBlue.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.medication,
-                  color: AppColors.primaryBlue,
-                  size: 24,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Drug name
-              Text(
-                drug.name,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.text,
-                  letterSpacing: -0.2,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 8),
-
-              // Dosage badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.secondaryGreen.withOpacity(0.2),
-                    width: 0.5,
-                  ),
-                ),
-                child: Text(
-                  drug.dosage,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.secondaryGreen,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-
-              const Spacer(),
-
-              // Order button
-              SizedBox(
-                width: double.infinity,
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MedOrderScreen(
-                          stage: 'Refill',
-                          preselectedDrug: drug,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    shadowColor: AppColors.primaryBlue.withOpacity(0.3),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_shopping_cart, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Order Now',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 

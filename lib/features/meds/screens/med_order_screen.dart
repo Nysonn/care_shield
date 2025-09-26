@@ -6,6 +6,7 @@ import '../providers/meds_provider.dart';
 import 'package:care_shield/core/widgets/loading_button.dart';
 import 'package:care_shield/core/constants.dart';
 import 'orders_history_screen.dart';
+import 'checkout_screen.dart';
 
 class MedOrderScreen extends StatefulWidget {
   final String stage;
@@ -108,7 +109,7 @@ class _MedOrderScreenState extends State<MedOrderScreen>
             children: [
               Icon(Icons.warning_outlined, color: Colors.white),
               const SizedBox(width: 8),
-              Text('Please select at least one medication'),
+              Text('Please select at least one product'),
             ],
           ),
           backgroundColor: AppColors.accent,
@@ -142,166 +143,15 @@ class _MedOrderScreenState extends State<MedOrderScreen>
       return;
     }
 
-    // Hide keyboard
-    FocusScope.of(context).unfocus();
-
-    setState(() {
-      _loading = true;
-      _success = null;
-    });
-
-    try {
-      final medsProv = Provider.of<MedsProvider>(context, listen: false);
-      await medsProv.placeOrder(
-        stage: widget.stage,
-        drugs: _selected,
-        location: _locationCtrl.text.trim(),
-      );
-
-      setState(() {
-        _success = 'Order placed successfully. ETA: 2-4 days';
-      });
-
-      // Success haptic feedback
-      HapticFeedback.mediumImpact();
-
-      if (mounted) {
-        _showSuccessDialog();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
-                Expanded(child: Text('Order failed: ${e.toString()}')),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.secondaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(40),
-              ),
-              child: Icon(
-                Icons.check_circle_outline,
-                color: AppColors.secondaryGreen,
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Order Placed Successfully!',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: AppColors.text,
-                letterSpacing: -0.3,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Your medication order has been placed. You\'ll receive updates via SMS.',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppColors.text.withOpacity(0.6),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.secondaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: AppColors.secondaryGreen.withOpacity(0.2),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                'ETA: 2-4 Business Days',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.secondaryGreen,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close dialog
-                      Navigator.pop(context); // Close order screen
-                    },
-                    child: Text(
-                      'Close',
-                      style: TextStyle(
-                        color: AppColors.text.withOpacity(0.6),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context); // Close dialog
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const OrdersHistoryScreen(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondaryGreen,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('View Orders'),
-                  ),
-                ),
-              ],
-            ),
-          ],
+    // Navigate to checkout screen
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CheckoutScreen(
+          stage: widget.stage,
+          selectedDrugs: _selected,
+          deliveryAddress: _locationCtrl.text.trim(),
         ),
       ),
     );
@@ -631,7 +481,7 @@ class _MedOrderScreenState extends State<MedOrderScreen>
               ),
               const SizedBox(width: 12),
               Text(
-                'Select Medications',
+                'Select Products',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -643,7 +493,7 @@ class _MedOrderScreenState extends State<MedOrderScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'Choose the medications you need for your ${widget.stage} treatment',
+            'Choose the products you need for your ${widget.stage} treatment',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -949,9 +799,9 @@ class _MedOrderScreenState extends State<MedOrderScreen>
             ),
           ],
           LoadingButton(
-            label: 'Place Order',
+            label: 'Proceed to Checkout',
             loading: _loading,
-            loadingText: 'Processing order...',
+            loadingText: 'Please wait...',
             onPressed: _placeOrder,
             customColor: AppColors.primaryBlue,
             size: ButtonSize.large,
@@ -959,7 +809,7 @@ class _MedOrderScreenState extends State<MedOrderScreen>
           ),
           const SizedBox(height: 12),
           Text(
-            'No payment required • Confidential delivery • 2-4 business days',
+            'Review payment & delivery options in the next step',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,

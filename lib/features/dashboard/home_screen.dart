@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:care_shield/core/constants.dart';
+import 'package:care_shield/core/widgets/product_card.dart';
 import 'package:care_shield/features/meds/screens/med_order_screen.dart';
+import 'package:care_shield/features/meds/screens/meds_screen.dart';
 import 'package:care_shield/features/meds/models/drug.dart';
 import 'package:care_shield/features/meds/providers/meds_provider.dart';
 import 'package:care_shield/features/care/screens/care_screen.dart';
@@ -26,11 +28,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   final _searchController = TextEditingController();
   final _searchFocus = FocusNode();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
+    _searchController.addListener(_onSearchChanged);
   }
 
   void _setupAnimations() {
@@ -77,12 +81,34 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _searchFocus.dispose();
     _fadeController.dispose();
     _slideController.dispose();
     _scaleController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+    });
+  }
+
+  List<Drug> _getFilteredDrugs(MedsProvider meds) {
+    if (_searchQuery.isEmpty) {
+      return meds.drugs;
+    }
+
+    return meds.drugs.where((drug) {
+      final nameLower = drug.name.toLowerCase();
+      final categoryLower = drug.category.toLowerCase();
+      final queryLower = _searchQuery.toLowerCase();
+
+      return nameLower.contains(queryLower) ||
+          categoryLower.contains(queryLower);
+    }).toList();
   }
 
   void _showBookingForm(BuildContext context) {
@@ -113,12 +139,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 _buildWelcomeHeader(),
                 const SizedBox(height: 24),
                 _buildSearchBar(),
-                const SizedBox(height: 24),
-                _buildCareSection(),
                 const SizedBox(height: 28),
                 _buildMedicationsSection(meds),
                 const SizedBox(height: 20),
                 _buildMedicationsGrid(meds),
+                const SizedBox(height: 20),
+                _buildViewMoreButton(),
+                const SizedBox(height: 28),
+                _buildCareSection(),
                 const SizedBox(height: 32),
               ],
             ),
@@ -257,13 +285,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: TextField(
           controller: _searchController,
           focusNode: _searchFocus,
+          onChanged: (value) => _onSearchChanged(),
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: AppColors.text,
           ),
           decoration: InputDecoration(
-            hintText: 'Search for medications...',
+            hintText: 'Search for products...',
             prefixIcon: Container(
               margin: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -272,24 +301,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
               child: Icon(Icons.search, color: AppColors.primaryBlue, size: 20),
             ),
-            suffixIcon: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.text.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.tune,
-                  color: AppColors.text.withOpacity(0.6),
-                  size: 18,
-                ),
-              ),
-              onPressed: () {
-                // Show filter options
-                HapticFeedback.lightImpact();
-              },
-            ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.text.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.clear,
+                        color: AppColors.text.withOpacity(0.6),
+                        size: 18,
+                      ),
+                    ),
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      _searchController.clear();
+                      _searchFocus.unfocus();
+                    },
+                  )
+                : null, // Remove the filter icon completely
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(20),
               borderSide: BorderSide.none,
@@ -437,6 +469,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMedicationsSection(MedsProvider meds) {
+    final filteredDrugs = _getFilteredDrugs(meds);
+
     return SlideTransition(
       position: _slideAnimation,
       child: Column(
@@ -454,7 +488,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Available Medications',
+                      'Products',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -464,7 +498,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${meds.drugs.length} medications available',
+                      _searchQuery.isNotEmpty
+                          ? '${filteredDrugs.length} results found'
+                          : '${meds.drugs.length} products available',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -529,30 +565,120 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildMedicationsGrid(MedsProvider meds) {
+    final filteredDrugs = _getFilteredDrugs(meds);
+    final displayDrugs = _searchQuery.isEmpty
+        ? (filteredDrugs.length > 5
+              ? filteredDrugs.take(5).toList()
+              : filteredDrugs)
+        : filteredDrugs; // Show all results when searching
+
+    if (filteredDrugs.isEmpty) {
+      return _buildNoResultsMessage();
+    }
+
     return ScaleTransition(
       scale: _scaleAnimation,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: meds.drugs.length > 4
-            ? 4
-            : meds.drugs.length, // Show max 4 on home screen
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 0.75,
+      child: Column(
+        children: [
+          ...List.generate(displayDrugs.length, (index) {
+            final drug = displayDrugs[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              child: _buildMedicationCard(drug, index),
+            );
+          }),
+          // Show "View More" button only when not searching and there are more items
+          if (_searchQuery.isEmpty && filteredDrugs.length > 5)
+            Container(
+              margin: const EdgeInsets.only(top: 8),
+              child: Text(
+                'Showing 5 of ${filteredDrugs.length} products',
+                style: TextStyle(
+                  color: AppColors.text.withOpacity(0.6),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoResultsMessage() {
+    return ScaleTransition(
+      scale: _scaleAnimation,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Icon(
+                Icons.search_off,
+                color: AppColors.primaryBlue.withOpacity(0.6),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No products found',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.text,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                _searchQuery.isNotEmpty
+                    ? 'Try searching with different keywords'
+                    : 'No products available at the moment',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.text.withOpacity(0.6),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            if (_searchQuery.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _searchController.clear();
+                  _searchFocus.unfocus();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryBlue,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  'Clear Search',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ],
         ),
-        itemBuilder: (context, index) {
-          final drug = meds.drugs[index];
-          return _buildMedicationCard(drug, index);
-        },
       ),
     );
   }
 
   Widget _buildMedicationCard(Drug drug, int index) {
-    return GestureDetector(
+    return ProductCard(
+      drug: drug,
+      index: index,
+      isCompact: false, // Changed from true to false to match meds screen
       onTap: () {
         HapticFeedback.lightImpact();
         Navigator.push(
@@ -563,137 +689,73 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         );
       },
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.primaryBlue.withOpacity(0.08),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryBlue.withOpacity(0.08),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon with gradient background
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryBlue.withOpacity(0.2),
-                      AppColors.primaryBlue.withOpacity(0.1),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  Icons.medication,
-                  color: AppColors.primaryBlue,
-                  size: 24,
-                ),
+    );
+  }
+
+  Widget _buildViewMoreButton() {
+    return Consumer<MedsProvider>(
+      builder: (context, meds, child) {
+        final filteredDrugs = _getFilteredDrugs(meds);
+
+        // Don't show the button if we're searching or if there are no more items to show
+        if (_searchQuery.isNotEmpty || filteredDrugs.length <= 5) {
+          return const SizedBox.shrink();
+        }
+
+        return ScaleTransition(
+          scale: _scaleAnimation,
+          child: Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primaryBlue.withOpacity(0.2),
+                width: 1.5,
               ),
-
-              const SizedBox(height: 16),
-
-              // Drug name
-              Text(
-                drug.name,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MedsScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.surface,
+                foregroundColor: AppColors.primaryBlue,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                side: BorderSide.none,
+              ),
+              icon: Icon(
+                Icons.visibility,
+                size: 20,
+                color: AppColors.primaryBlue,
+              ),
+              label: Text(
+                'View More Products',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.text,
-                  letterSpacing: -0.2,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 8),
-
-              // Dosage badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryGreen.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.secondaryGreen.withOpacity(0.2),
-                    width: 0.5,
-                  ),
-                ),
-                child: Text(
-                  drug.dosage,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.secondaryGreen,
-                    letterSpacing: 0.3,
-                  ),
+                  color: AppColors.primaryBlue,
+                  letterSpacing: 0.2,
                 ),
               ),
-
-              const Spacer(),
-
-              // Order button
-              SizedBox(
-                width: double.infinity,
-                height: 40,
-                child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => MedOrderScreen(
-                          stage: 'Refill',
-                          preselectedDrug: drug,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryBlue,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    shadowColor: AppColors.primaryBlue.withOpacity(0.3),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_shopping_cart, size: 16),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Order Now',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

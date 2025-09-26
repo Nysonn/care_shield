@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../meds/providers/meds_provider.dart';
+import '../../meds/models/payment_models.dart';
 import 'package:intl/intl.dart';
 import 'package:care_shield/core/constants.dart';
 
@@ -81,6 +82,21 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
   }
 
   String _getOrderStatus(MedOrder order) {
+    // Check payment status first
+    if (order.paymentInfo != null) {
+      switch (order.paymentInfo!.status) {
+        case PaymentStatus.pending:
+          return 'Payment Pending';
+        case PaymentStatus.processing:
+          return 'Payment Processing';
+        case PaymentStatus.failed:
+          return 'Payment Failed';
+        case PaymentStatus.completed:
+          break; // Continue to delivery status
+      }
+    }
+
+    // If payment is completed or no payment info, check delivery status
     final now = DateTime.now();
     final daysSinceOrder = now.difference(order.createdAt).inDays;
 
@@ -97,6 +113,11 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
 
   Color _getStatusColor(String status) {
     switch (status) {
+      case 'Payment Pending':
+      case 'Payment Processing':
+        return AppColors.accent;
+      case 'Payment Failed':
+        return Colors.red;
       case 'Processing':
         return AppColors.accent;
       case 'In Transit':
@@ -112,6 +133,12 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
 
   IconData _getStatusIcon(String status) {
     switch (status) {
+      case 'Payment Pending':
+        return Icons.schedule_outlined;
+      case 'Payment Processing':
+        return Icons.sync_outlined;
+      case 'Payment Failed':
+        return Icons.error_outline;
       case 'Processing':
         return Icons.hourglass_empty_outlined;
       case 'In Transit':
@@ -575,7 +602,7 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
           ),
           const SizedBox(height: 8),
           Text(
-            'When you place your first medication order, it will appear here for tracking.',
+            'When you place your first product order, it will appear here for tracking.',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -590,12 +617,12 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
               Navigator.of(context).pop();
             },
             icon: Icon(
-              Icons.medication_outlined,
+              Icons.shopping_cart_outlined,
               color: Colors.white,
               size: 18,
             ),
             label: const Text(
-              'Order Medications',
+              'Browse Products',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -741,7 +768,7 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Medications (${order.drugs.length})',
+                    'Products (${order.drugs.length})',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -782,6 +809,64 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
 
             const SizedBox(height: 16),
 
+            // Payment and delivery information
+            if (order.paymentInfo != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.secondaryGreen.withOpacity(0.2),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.payment,
+                      color: AppColors.secondaryGreen,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Paid via ${order.paymentInfo!.method.displayName}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.secondaryGreen,
+                            ),
+                          ),
+                          if (order.paymentInfo!.referenceCode != null)
+                            Text(
+                              'Ref: ${order.paymentInfo!.referenceCode}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.secondaryGreen.withOpacity(
+                                  0.8,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      'UGX ${order.totalAmount.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.secondaryGreen,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             // Delivery information
             Row(
               children: [
@@ -801,14 +886,24 @@ class _OrdersHistoryScreenState extends State<OrdersHistoryScreen>
                     ),
                   ),
                 ),
-                Text(
-                  'ETA: ${order.eta}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.text.withOpacity(0.6),
+                if (order.deliveryOption != null)
+                  Text(
+                    '${order.deliveryOption!.name} • ${order.eta}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text.withOpacity(0.6),
+                    ),
+                  )
+                else
+                  Text(
+                    'ETA: ${order.eta}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text.withOpacity(0.6),
+                    ),
                   ),
-                ),
               ],
             ),
           ],

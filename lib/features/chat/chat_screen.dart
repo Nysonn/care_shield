@@ -140,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
         lower.contains('medicine') ||
         lower.contains('refill') ||
         lower.contains('prescription')) {
-      return '💊 For medication requests, please visit the Medications tab to place an order. If this is urgent, you can contact your health center directly or book an emergency consultation.';
+      return '💊 For product orders, please visit the Products tab to browse our catalog and place an order. If this is urgent, you can contact your health center directly or book an emergency consultation.';
     }
 
     if (lower.contains('hello') ||
