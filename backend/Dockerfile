@@ -10,6 +10,9 @@ COPY . .
 
 RUN npx prisma generate
 
+# Prevent local dev .env from overriding platform-provided environment variables
+RUN rm -f .env || true
+
 RUN npm run build
 
 EXPOSE 3000
