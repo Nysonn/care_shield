@@ -14,4 +14,5 @@ RUN npm run build
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Ensure database schema is up-to-date before starting the server
+CMD ["sh", "-c", "npx prisma migrate deploy && npm start"]
