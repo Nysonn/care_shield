@@ -26,4 +26,4 @@ EXPOSE 3000
 
 # Ensure database schema is up-to-date before starting the server
 # If DATABASE_DIRECT_URL is not provided by the platform, fall back to DATABASE_URL so Prisma config validation passes
-CMD ["sh", "-c", "export DATABASE_DIRECT_URL=\${DATABASE_DIRECT_URL:-$DATABASE_URL} && npx prisma migrate deploy && npm start"]
+CMD sh -c "export DATABASE_DIRECT_URL=\${DATABASE_DIRECT_URL:-\$DATABASE_URL} && npx prisma migrate deploy && npm start"
