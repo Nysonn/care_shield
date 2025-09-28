@@ -140,8 +140,8 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (mounted) {
         _showSuccessMessage();
-        // Navigate to dashboard when route is implemented
-        // Navigator.pushReplacementNamed(context, '/dashboard');
+        // Push to home and clear auth screens from back stack
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
     } catch (e) {
       if (mounted) {

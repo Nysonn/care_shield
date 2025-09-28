@@ -39,6 +39,8 @@ class MyApp extends StatelessWidget {
             SignupScreen.routeName: (_) => const SignupScreen(),
             LoginScreen.routeName: (_) => const LoginScreen(),
             ForgotPasswordScreen.routeName: (_) => const ForgotPasswordScreen(),
+            // Named route to app home for post-auth redirects
+            '/home': (_) => const BottomNavScaffold(),
           },
         );
       },

@@ -14,4 +14,15 @@ class HealthCenter {
     required this.openHours,
     required this.phone,
   });
+
+  factory HealthCenter.fromMap(Map<String, dynamic> map) {
+    return HealthCenter(
+      id: map['id'],
+      name: map['name'],
+      address: map['address'],
+      distanceKm: map['distanceKm'].toDouble(),
+      openHours: map['openHours'],
+      phone: map['phone'],
+    );
+  }
 }

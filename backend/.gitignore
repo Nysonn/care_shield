@@ -1,0 +1,65 @@
+# Dependency directories
+# Node.js project dependencies
+/node_modules
+
+# Optionally ignore an "out" folder for built/transpiled files
+# e.g., if you are using TypeScript or Babel
+/dist
+/build
+
+# Logs and debug files
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Diagnostic reports (Node.js)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage/Testing reports
+/coverage
+/.nyc_output
+
+# Configuration files
+# Environment variables - contains sensitive information
+# *IMPORTANT*: Never commit your actual environment variables!
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Package manager lock files (choose the ones you use)
+# You generally *do not* want to ignore package-lock.json or yarn.lock, 
+# but if you are using a non-standard one, you might include it here.
+# pnpm-lock.yaml
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Editor/IDE specific files
+# VS Code
+.vscode/*
+!.vscode/settings.json    # Optional: If you want to share workspace settings
+!.vscode/tasks.json       # Optional: If you want to share workspace tasks
+!.vscode/launch.json      # Optional: If you want to share debug configurations
+!.vscode/extensions.json  # Optional: If you want to recommend extensions
+.history                  # VS Code Local History extension folder
+
+# OS generated files
+.DS_Store
+Thumbs.db

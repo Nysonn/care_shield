@@ -7,6 +7,9 @@ import 'package:care_shield/features/auth/providers/auth_provider.dart';
 import 'package:care_shield/features/meds/providers/meds_provider.dart';
 import 'package:care_shield/features/survey/providers/survey_provider.dart';
 import 'package:care_shield/core/theme.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:care_shield/services/api_client.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,10 +20,15 @@ Future<void> main() async {
   // Init Hive + secure key
   await LocalStorageService.init();
 
+  // Create ApiClient
+  final dio = Dio();
+  final secureStorage = FlutterSecureStorage();
+  final apiClient = ApiClient(dio: dio, secureStorage: secureStorage);
+
   // Create providers and initialize their boxes / state BEFORE runApp
-  final authProvider = AuthProvider();
-  final medsProvider = MedsProvider();
-  final surveyProvider = SurveyProvider();
+  final authProvider = AuthProvider(apiClient: apiClient, secureStorage: secureStorage);
+  final medsProvider = MedsProvider(apiClient: apiClient);
+  final surveyProvider = SurveyProvider(apiClient: apiClient);
 
   // Run initialization routines (open encrypted boxes, load session, etc.)
   await Future.wait([

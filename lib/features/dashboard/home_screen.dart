@@ -7,6 +7,7 @@ import 'package:care_shield/features/meds/screens/med_order_screen.dart';
 import 'package:care_shield/features/meds/screens/meds_screen.dart';
 import 'package:care_shield/features/meds/models/drug.dart';
 import 'package:care_shield/features/meds/providers/meds_provider.dart';
+import 'package:care_shield/features/auth/providers/auth_provider.dart';
 import 'package:care_shield/features/care/screens/care_screen.dart';
 import '../survey/providers/survey_provider.dart';
 
@@ -157,6 +158,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildWelcomeHeader() {
+    final auth = Provider.of<AuthProvider>(context, listen: true);
+    final displayName = auth.currentUser?.fullName.trim();
     return FadeTransition(
       opacity: _fadeAnimation,
       child: SlideTransition(
@@ -212,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Hi Alex',
+                      'Hi ${displayName?.isNotEmpty == true ? displayName : 'there'}',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,

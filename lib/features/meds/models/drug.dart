@@ -18,4 +18,17 @@ class Drug {
     required this.category,
     this.requiresPrescription = false,
   });
+
+  factory Drug.fromMap(Map<String, dynamic> map) {
+    return Drug(
+      id: map['id'],
+      name: map['name'],
+      description: map['description'],
+      dosage: map['dosage'],
+      price: map['price'].toDouble(),
+      currency: map['currency'] ?? 'UGX',
+      category: map['category'],
+      requiresPrescription: map['requiresPrescription'] ?? false,
+    );
+  }
 }

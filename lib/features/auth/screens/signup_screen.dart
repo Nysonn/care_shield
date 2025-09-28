@@ -235,7 +235,13 @@ class _SignupScreenState extends State<SignupScreen>
       );
 
       if (mounted) {
-        _showSuccessDialog();
+        if (auth.isAuthenticated) {
+          // Auto-logged in after signup: go straight to home
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        } else {
+          // Fallback: show existing success dialog and route to login
+          _showSuccessDialog();
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -322,11 +328,9 @@ class _SignupScreenState extends State<SignupScreen>
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
-                    Navigator.popUntil(
-                      context,
-                      ModalRoute.withName('/onboarding'),
-                    );
-                    Navigator.pushNamed(context, '/home');
+                    // After successful signup, user needs to login to get authenticated
+                    Navigator.popUntil(context, ModalRoute.withName('/signup'));
+                    Navigator.pushReplacementNamed(context, '/login');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
