@@ -17,7 +17,7 @@ class ApiClient {
     final devBase = Platform.isAndroid
         ? 'http://10.0.2.2:3000/api'
         : 'http://localhost:3000/api';
-    const prodBase = 'https://care-shield.onrender.com/api';
+    const prodBase = 'https://care-shield.onrender.com';
     dio.options.baseUrl = envBase.isNotEmpty
         ? envBase
         : (kReleaseMode ? prodBase : devBase);
