@@ -157,7 +157,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             ),
             const SizedBox(height: 24),
             Text(
-              'Payment Successful!',
+              'Order Successful!',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -167,7 +167,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
             ),
             const SizedBox(height: 12),
             Text(
-              'Your order has been placed and payment confirmed. You\'ll receive updates via SMS.',
+              'Your order has been placed and payment will be made on delivery. You\'ll receive updates via SMS.',
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.text.withOpacity(0.6),
