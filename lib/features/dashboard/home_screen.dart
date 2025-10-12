@@ -10,6 +10,10 @@ import 'package:care_shield/features/meds/providers/meds_provider.dart';
 import 'package:care_shield/features/auth/providers/auth_provider.dart';
 import 'package:care_shield/features/care/screens/care_screen.dart';
 import '../survey/providers/survey_provider.dart';
+import 'package:care_shield/features/meds/providers/pharmacy_provider.dart';
+import 'package:care_shield/features/meds/models/pharmacy.dart';
+import 'package:care_shield/features/meds/screens/pharmacies_screen.dart';
+import 'package:care_shield/features/meds/screens/pharmacy_details_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   static const routeName = '/home';
@@ -112,6 +116,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     }).toList();
   }
 
+  List<Pharmacy> _getFilteredPharmacies(PharmacyProvider pharmacyProvider) {
+    if (_searchQuery.isEmpty) {
+      return pharmacyProvider.pharmacies;
+    }
+
+    return pharmacyProvider.pharmacies.where((pharmacy) {
+      final nameLower = pharmacy.name.toLowerCase();
+      final addressLower = pharmacy.address.toLowerCase();
+      final districtLower = pharmacy.district.toLowerCase();
+      final queryLower = _searchQuery.toLowerCase();
+
+      return nameLower.contains(queryLower) ||
+          addressLower.contains(queryLower) ||
+          districtLower.contains(queryLower);
+    }).toList();
+  }
+
   void _showBookingForm(BuildContext context) {
     HapticFeedback.lightImpact();
     showModalBottomSheet(
@@ -148,6 +169,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 _buildViewMoreButton(),
                 const SizedBox(height: 28),
                 _buildCareSection(),
+                const SizedBox(height: 32),
+                _buildPharmaciesSection(),
                 const SizedBox(height: 32),
               ],
             ),
@@ -295,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             color: AppColors.text,
           ),
           decoration: InputDecoration(
-            hintText: 'Search for products...',
+            hintText: 'Search products & pharmacies...',
             prefixIcon: Container(
               margin: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -468,6 +491,381 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPharmaciesSection() {
+    return Consumer<PharmacyProvider>(
+      builder: (context, pharmacyProvider, child) {
+        final filteredPharmacies = _getFilteredPharmacies(pharmacyProvider);
+        final displayPharmacies = _searchQuery.isEmpty
+            ? filteredPharmacies.take(3).toList()
+            : filteredPharmacies;
+
+        return ScaleTransition(
+          scale: _scaleAnimation,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Pharmacies',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.text,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  if (pharmacyProvider.pharmacies.isNotEmpty &&
+                      _searchQuery.isEmpty)
+                    TextButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PharmaciesScreen(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryBlue,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'View All',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_forward, size: 16),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _searchQuery.isNotEmpty
+                    ? '${filteredPharmacies.length} pharmacies found'
+                    : (pharmacyProvider.pharmacies.isEmpty
+                          ? 'Find trusted pharmacies near you'
+                          : '${pharmacyProvider.pharmacies.length}+ pharmacies in Mbarara'),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.text.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              if (pharmacyProvider.isLoading)
+                _buildPharmaciesLoading()
+              else if (pharmacyProvider.error != null)
+                _buildPharmaciesError(pharmacyProvider.error!)
+              else if (filteredPharmacies.isEmpty)
+                _buildPharmaciesEmpty()
+              else
+                _buildPharmaciesList(displayPharmacies),
+
+              if (_searchQuery.isEmpty &&
+                  pharmacyProvider.pharmacies.length > 3) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: AppColors.primaryBlue.withOpacity(0.2),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PharmaciesScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.surface,
+                      foregroundColor: AppColors.primaryBlue,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    icon: Icon(Icons.store, size: 20),
+                    label: Text(
+                      'View All Pharmacies',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPharmaciesLoading() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Center(
+        child: Column(
+          children: [
+            CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading pharmacies...',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.text.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPharmaciesError(String error) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.withOpacity(0.2), width: 1),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red, size: 24),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Failed to load pharmacies',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  error,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.red.withOpacity(0.8),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPharmaciesEmpty() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.primaryBlue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Icon(
+              Icons.local_pharmacy_outlined,
+              color: AppColors.primaryBlue.withOpacity(0.6),
+              size: 40,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No pharmacies available',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppColors.text,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Check back later for available pharmacies',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppColors.text.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPharmaciesList(List<Pharmacy> pharmacies) {
+    return Column(
+      children: pharmacies.map((pharmacy) {
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.lightImpact();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PharmacyDetailsScreen(pharmacy: pharmacy),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppColors.text.withOpacity(0.08),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryBlue.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.local_pharmacy,
+                      color: AppColors.primaryBlue,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pharmacy.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.location_on,
+                              size: 14,
+                              color: AppColors.text.withOpacity(0.5),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                pharmacy.address,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.text.withOpacity(0.7),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified,
+                                size: 12,
+                                color: AppColors.secondaryGreen,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                pharmacy.district,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.secondaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppColors.text.withOpacity(0.4),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 

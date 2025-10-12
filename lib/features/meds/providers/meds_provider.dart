@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../models/drug.dart';
+import '../models/pharmacy.dart';
+import '../models/service.dart';
 import '../models/payment_models.dart';
 import 'package:care_shield/services/api_client.dart';
 
@@ -8,6 +10,8 @@ class MedOrder {
   final String id;
   final String stage;
   final List<Drug> drugs;
+  final List<OrderService> services;
+  final Pharmacy? pharmacy;
   final String location;
   final DateTime createdAt;
   final String eta;
@@ -18,6 +22,8 @@ class MedOrder {
     required this.id,
     required this.stage,
     required this.drugs,
+    this.services = const [],
+    this.pharmacy,
     required this.location,
     required this.createdAt,
     required this.eta,
@@ -30,6 +36,14 @@ class MedOrder {
       id: map['id'],
       stage: map['stage'],
       drugs: (map['drugs'] as List).map((d) => Drug.fromMap(d)).toList(),
+      services: map['services'] != null
+          ? (map['services'] as List)
+                .map((s) => OrderService.fromMap(s))
+                .toList()
+          : [],
+      pharmacy: map['pharmacy'] != null
+          ? Pharmacy.fromMap(map['pharmacy'])
+          : null,
       location: map['location'],
       createdAt: DateTime.parse(map['createdAt']),
       eta: map['eta'],
@@ -76,16 +90,22 @@ class MedsProvider extends ChangeNotifier {
     required String location,
     DeliveryOption? deliveryOption,
     PaymentMethod? paymentMethod,
+    required String pharmacyId,
+    List<OrderService> services = const [],
   }) async {
     try {
       final productsTotal = drugs.fold<double>(
         0,
         (sum, drug) => sum + drug.price,
       );
+      final servicesTotal = services.fold<double>(
+        0,
+        (sum, service) => sum + service.price,
+      );
       final deliveryFee = deliveryOption?.price ?? 0.0;
-      final totalAmount = productsTotal + deliveryFee;
+      final totalAmount = productsTotal + servicesTotal + deliveryFee;
 
-      final response = await apiClient.dio.post(
+      await apiClient.dio.post(
         '/med-orders',
         data: {
           'stage': stage,
@@ -93,7 +113,17 @@ class MedsProvider extends ChangeNotifier {
           'eta': deliveryOption?.eta ?? '2-4 days',
           'totalAmount': totalAmount,
           'deliveryFee': deliveryFee,
-          'drugs': drugs.map((d) => d.id).toList(),
+          'drugs': drugs.map((d) => {'drugId': d.id}).toList(),
+          'pharmacyId': pharmacyId,
+          'services': services
+              .map(
+                (s) => {
+                  'serviceId': s.service.id,
+                  'pharmacyServiceId': pharmacyId + '_' + s.service.id,
+                  'quantity': s.quantity,
+                },
+              )
+              .toList(),
         },
       );
 

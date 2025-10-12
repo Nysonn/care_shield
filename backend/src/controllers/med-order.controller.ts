@@ -3,12 +3,25 @@ import * as medOrderService from '../services/med-order.service.js';
 import Joi from 'joi';
 
 const createMedOrderSchema = Joi.object({
+  pharmacyId: Joi.string().required(),
   stage: Joi.string().required(),
   location: Joi.string().required(),
   eta: Joi.string().required(),
   totalAmount: Joi.number().required(),
   deliveryFee: Joi.number().required(),
-  drugs: Joi.array().items(Joi.string()).required(),
+  drugs: Joi.array().items(
+    Joi.object({
+      drugId: Joi.string().required(),
+      pharmacyDrugId: Joi.string().optional(),
+    })
+  ).required(),
+  services: Joi.array().items(
+    Joi.object({
+      serviceId: Joi.string().required(),
+      pharmacyServiceId: Joi.string().required(),
+      quantity: Joi.number().optional().default(1),
+    })
+  ).optional().default([]),
   paymentId: Joi.string().optional(),
 });
 

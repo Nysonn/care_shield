@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/drug.dart';
+import '../models/pharmacy.dart';
+import '../models/pharmacy_drug.dart';
 import '../providers/meds_provider.dart';
 import 'package:care_shield/core/widgets/loading_button.dart';
 import 'package:care_shield/core/constants.dart';
@@ -144,6 +146,26 @@ class _MedOrderScreenState extends State<MedOrderScreen>
     }
 
     // Navigate to checkout screen
+    // NOTE: This is legacy flow - users should use pharmacy selection instead
+    // Create a temporary pharmacy for backward compatibility
+    final defaultPharmacy = Pharmacy(
+      id: 'default',
+      name: 'CareShield Pharmacy',
+      address: 'Mbarara, Uganda',
+      district: 'Mbarara',
+    );
+
+    // Convert selected drugs to PharmacyDrug
+    final pharmacyDrugs = _selected.map((drug) {
+      return PharmacyDrug(
+        id: '${defaultPharmacy.id}-${drug.id}',
+        pharmacyId: defaultPharmacy.id,
+        drug: drug,
+        price: drug.price,
+        isAvailable: true,
+      );
+    }).toList();
+
     HapticFeedback.lightImpact();
     Navigator.push(
       context,
@@ -152,6 +174,8 @@ class _MedOrderScreenState extends State<MedOrderScreen>
           stage: widget.stage,
           selectedDrugs: _selected,
           deliveryAddress: _locationCtrl.text.trim(),
+          pharmacy: defaultPharmacy,
+          selectedPharmacyDrugs: pharmacyDrugs,
         ),
       ),
     );

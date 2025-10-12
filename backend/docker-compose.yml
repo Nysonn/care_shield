@@ -1,27 +1,13 @@
-version: '3.8'
-
 services:
   backend:
     build: .
     ports:
       - "3000:3000"
+    # Load environment from host .env so Prisma uses Render Postgres
+    env_file:
+      - .env
     environment:
-      # Use the internal Docker network host "db" for DATABASE_URL inside the container
-      - DATABASE_URL=postgresql://user:password@db:5432/mydatabase?schema=public
+      # Allow overriding or ensuring vars are present; fallback provided for JWT_SECRET only
+      - DATABASE_URL=${DATABASE_URL}
+      - DATABASE_DIRECT_URL=${DATABASE_DIRECT_URL}
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-    depends_on:
-      - db
-
-  db:
-    image: postgres:13
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=mydatabase
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:

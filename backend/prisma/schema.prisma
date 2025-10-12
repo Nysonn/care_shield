@@ -25,13 +25,88 @@ model Drug {
   name               String
   description        String
   dosage             String
-  price              Float
+  price              Float    // Base/reference price
   currency           String   @default("UGX")
   category           String
   requiresPrescription Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
   orders             MedOrder[]
+  pharmacyDrugs      PharmacyDrug[]
+}
+
+model Pharmacy {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  district    String   @default("Mbarara")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  pharmacyDrugs    PharmacyDrug[]
+  pharmacyServices PharmacyService[]
+  orders           MedOrder[]
+}
+
+model PharmacyDrug {
+  id          String   @id @default(uuid())
+  pharmacyId  String
+  drugId      String
+  price       Float
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  pharmacy    Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  drug        Drug     @relation(fields: [drugId], references: [id], onDelete: Cascade)
+  
+  @@unique([pharmacyId, drugId])
+  @@index([pharmacyId])
+  @@index([drugId])
+}
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  pharmacyServices PharmacyService[]
+  orderServices    OrderService[]
+}
+
+model PharmacyService {
+  id          String   @id @default(uuid())
+  pharmacyId  String
+  serviceId   String
+  price       Float
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  pharmacy    Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  @@unique([pharmacyId, serviceId])
+  @@index([pharmacyId])
+  @@index([serviceId])
+}
+
+model OrderService {
+  id         String   @id @default(uuid())
+  orderId    String
+  serviceId  String
+  quantity   Int      @default(1)
+  price      Float
+  createdAt  DateTime @default(now())
+  
+  order      MedOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  service    Service  @relation(fields: [serviceId], references: [id])
+  
+  @@index([orderId])
+  @@index([serviceId])
 }
 
 model MedOrder {
@@ -43,11 +118,34 @@ model MedOrder {
   eta          String
   totalAmount  Float
   deliveryFee  Float
+  pharmacyId   String?
+  
   user         User     @relation(fields: [userId], references: [id])
   userId       String
+  pharmacy     Pharmacy? @relation(fields: [pharmacyId], references: [id])
   drugs        Drug[]
+  services     OrderService[]
   payment      Payment? @relation(fields: [paymentId], references: [id])
   paymentId    String?  @unique
+  
+  @@index([pharmacyId])
+  @@index([userId])
+}
+
+model ArchivedOrder {
+  id           String   @id @default(uuid())
+  originalId   String   @unique
+  stage        String
+  location     String
+  createdAt    DateTime
+  archivedAt   DateTime @default(now())
+  eta          String
+  totalAmount  Float
+  deliveryFee  Float
+  userId       String
+  orderData    Json
+  
+  @@index([userId])
 }
 
 model Payment {

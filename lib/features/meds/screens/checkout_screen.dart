@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/drug.dart';
 import '../models/payment_models.dart';
+import '../models/pharmacy.dart';
+import '../models/pharmacy_drug.dart';
+import '../models/service.dart';
 import '../providers/meds_provider.dart';
 import 'package:care_shield/core/constants.dart';
 import 'package:care_shield/core/widgets/loading_button.dart';
@@ -12,12 +15,18 @@ class CheckoutScreen extends StatefulWidget {
   final String stage;
   final List<Drug> selectedDrugs;
   final String deliveryAddress;
+  final Pharmacy pharmacy;
+  final List<PharmacyDrug> selectedPharmacyDrugs;
+  final List<OrderService> selectedServices;
 
   const CheckoutScreen({
     super.key,
     required this.stage,
     required this.selectedDrugs,
     required this.deliveryAddress,
+    required this.pharmacy,
+    this.selectedPharmacyDrugs = const [],
+    this.selectedServices = const [],
   });
 
   @override
@@ -30,6 +39,9 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   PaymentMethod? _selectedPaymentMethod;
   bool _loading = false;
 
+  late TextEditingController _locationController;
+  final _locationFocus = FocusNode();
+
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late Animation<double> _fadeAnimation;
@@ -38,6 +50,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   @override
   void initState() {
     super.initState();
+    _locationController = TextEditingController(text: widget.deliveryAddress);
     _setupAnimations();
     // Pre-select standard delivery and MTN MoMo as defaults
     _selectedDeliveryOption =
@@ -77,24 +90,82 @@ class _CheckoutScreenState extends State<CheckoutScreen>
 
   @override
   void dispose() {
+    _locationController.dispose();
+    _locationFocus.dispose();
     _fadeController.dispose();
     _slideController.dispose();
     super.dispose();
   }
 
-  double get _productsTotal =>
-      widget.selectedDrugs.fold<double>(0, (sum, drug) => sum + drug.price);
+  double get _productsTotal => widget.selectedPharmacyDrugs.fold<double>(
+    0,
+    (sum, pharmDrug) => sum + pharmDrug.price,
+  );
+
+  double get _servicesTotal => widget.selectedServices.fold<double>(
+    0,
+    (sum, service) => sum + service.price,
+  );
 
   double get _deliveryFee => _selectedDeliveryOption?.price ?? 0.0;
 
-  double get _totalAmount => _productsTotal + _deliveryFee;
+  double get _totalAmount => _productsTotal + _servicesTotal + _deliveryFee;
 
   Future<void> _placeOrder() async {
+    if (_locationController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.location_off, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Please provide a delivery address')),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      // Focus on the location field
+      _locationFocus.requestFocus();
+      return;
+    }
+
+    if (_locationController.text.trim().length < 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.warning_outlined, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Please provide a complete delivery address'),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      _locationFocus.requestFocus();
+      return;
+    }
+
     if (_selectedDeliveryOption == null || _selectedPaymentMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please select delivery and payment options'),
           backgroundColor: AppColors.accent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
       return;
@@ -105,12 +176,27 @@ class _CheckoutScreenState extends State<CheckoutScreen>
     try {
       final medsProvider = Provider.of<MedsProvider>(context, listen: false);
 
+      // Convert PharmacyDrug to Drug for API call
+      final drugs = widget.selectedPharmacyDrugs.map((pharmDrug) {
+        return Drug(
+          id: pharmDrug.drug.id,
+          name: pharmDrug.drug.name,
+          description: pharmDrug.drug.description,
+          dosage: pharmDrug.drug.dosage,
+          category: pharmDrug.drug.category,
+          price: pharmDrug.price, // Use pharmacy-specific price
+          requiresPrescription: pharmDrug.drug.requiresPrescription,
+        );
+      }).toList();
+
       await medsProvider.placeOrder(
         stage: widget.stage,
-        drugs: widget.selectedDrugs,
-        location: widget.deliveryAddress,
+        drugs: drugs,
+        location: _locationController.text.trim(),
         deliveryOption: _selectedDeliveryOption,
         paymentMethod: _selectedPaymentMethod,
+        pharmacyId: widget.pharmacy.id,
+        services: widget.selectedServices,
       );
 
       HapticFeedback.mediumImpact();
@@ -243,6 +329,8 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildOrderSummary(),
+                  const SizedBox(height: 24),
+                  _buildDeliveryAddressSection(),
                   const SizedBox(height: 24),
                   _buildDeliveryOptions(),
                   const SizedBox(height: 24),
@@ -384,51 +472,316 @@ class _CheckoutScreenState extends State<CheckoutScreen>
                 color: AppColors.text,
               ),
             ),
-            const SizedBox(height: 16),
-            ...widget.selectedDrugs.map(
-              (drug) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.medication_outlined,
-                      color: AppColors.primaryBlue,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            drug.name,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.text,
-                            ),
-                          ),
-                          Text(
-                            drug.category,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.text.withOpacity(0.6),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      'UGX ${drug.price.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.primaryBlue,
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 12),
+            // Pharmacy header
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryBlue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
                 ),
               ),
+              child: Row(
+                children: [
+                  Icon(Icons.store, color: AppColors.primaryBlue, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.pharmacy.name,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text,
+                          ),
+                        ),
+                        Text(
+                          widget.pharmacy.address,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.text.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Delivery Address
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.secondaryGreen.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.secondaryGreen.withOpacity(0.1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.location_on,
+                    color: AppColors.secondaryGreen,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Delivery Address',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.deliveryAddress.isEmpty
+                              ? 'Not provided'
+                              : widget.deliveryAddress,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: widget.deliveryAddress.isEmpty
+                                ? Colors.red
+                                : AppColors.text,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit,
+                      size: 18,
+                      color: AppColors.secondaryGreen,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context); // Go back to edit address
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Medications section
+            if (widget.selectedPharmacyDrugs.isNotEmpty) ...[
+              Text(
+                'Medications',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...widget.selectedPharmacyDrugs.map(
+                (pharmDrug) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.medication_outlined,
+                        color: AppColors.primaryBlue,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              pharmDrug.drug.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            Text(
+                              pharmDrug.drug.category,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.text.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'UGX ${pharmDrug.price.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+            // Services section
+            if (widget.selectedServices.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Services',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.text.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...widget.selectedServices.map(
+                (orderService) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.medical_services_outlined,
+                        color: AppColors.secondaryGreen,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              orderService.service.name,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            Text(
+                              orderService.service.description,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.text.withOpacity(0.6),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'UGX ${orderService.price.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.secondaryGreen,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeliveryAddressSection() {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.location_on, color: AppColors.primaryBlue, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  'Delivery Address',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.text,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _locationController,
+              focusNode: _locationFocus,
+              maxLines: 3,
+              style: TextStyle(fontSize: 14, color: AppColors.text),
+              decoration: InputDecoration(
+                hintText: 'Enter your complete delivery address...',
+                hintStyle: TextStyle(color: AppColors.text.withOpacity(0.4)),
+                prefixIcon: Icon(
+                  Icons.location_on_outlined,
+                  color: AppColors.primaryBlue,
+                ),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.text.withOpacity(0.1),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.text.withOpacity(0.1),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: AppColors.primaryBlue,
+                    width: 2,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: AppColors.text.withOpacity(0.6),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Your medication will be delivered in discrete packaging',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.text.withOpacity(0.6),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -617,22 +970,42 @@ class _CheckoutScreenState extends State<CheckoutScreen>
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Products Total:',
-                  style: TextStyle(color: AppColors.text),
-                ),
-                Text(
-                  'UGX ${_productsTotal.toStringAsFixed(0)}',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.text,
+            if (widget.selectedPharmacyDrugs.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Medications Total:',
+                    style: TextStyle(color: AppColors.text),
                   ),
-                ),
-              ],
-            ),
+                  Text(
+                    'UGX ${_productsTotal.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ],
+              ),
+            if (widget.selectedServices.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Services Total:',
+                    style: TextStyle(color: AppColors.text),
+                  ),
+                  Text(
+                    'UGX ${_servicesTotal.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.text,
+                    ),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -43,10 +43,10 @@ class DeliveryOption {
       DeliveryOption(
         id: 'same_day',
         name: 'Same Day Delivery',
-        description: 'Within Kampala only',
+        description: 'Within Mbarara only',
         price: 5000,
         eta: 'Same day (6-8 hours)',
-        availableZones: ['Kampala'],
+        availableZones: ['Mbarara'],
       ),
       DeliveryOption(
         id: 'next_day',
@@ -54,7 +54,7 @@ class DeliveryOption {
         description: 'Within Central Region',
         price: 8000,
         eta: 'Next day delivery',
-        availableZones: ['Kampala', 'Wakiso', 'Mukono', 'Mpigi'],
+        availableZones: ['Mbarara', 'Wakiso', 'Mukono', 'Mpigi'],
       ),
       DeliveryOption(
         id: 'standard',
@@ -67,10 +67,10 @@ class DeliveryOption {
       DeliveryOption(
         id: 'express',
         name: 'Express Delivery',
-        description: '2-4 hours in Kampala',
+        description: '2-4 hours in Mbarara',
         price: 15000,
         eta: '2-4 hours',
-        availableZones: ['Kampala Central'],
+        availableZones: ['Mbarara Central'],
       ),
     ];
   }

@@ -181,21 +181,21 @@ async function main() {
     data: [
       {
         name: 'Mulago HIV Clinic',
-        address: 'Mulago Hill, Kampala',
+        address: 'Mulago Hill, Mbarara',
         distanceKm: 1.2,
         openHours: 'Mon-Fri 08:00-17:00',
         phone: '+256700000001',
       },
       {
         name: 'Kisenyi Health Centre',
-        address: 'Kisenyi, Kampala',
+        address: 'Kisenyi, Mbarara',
         distanceKm: 2.1,
         openHours: 'Mon-Sat 09:00-16:00',
         phone: '+256700000002',
       },
       {
-        name: 'Kampala Central Health Clinic',
-        address: 'Central Kampala',
+        name: 'Mbarara Central Health Clinic',
+        address: 'Central Mbarara',
         distanceKm: 3.5,
         openHours: 'Mon-Fri 08:00-17:00',
         phone: '+256700000003',

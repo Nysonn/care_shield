@@ -6,6 +6,7 @@ import '../models/drug.dart';
 import '../providers/meds_provider.dart';
 import 'med_order_screen.dart';
 import 'orders_history_screen.dart';
+import 'pharmacies_screen.dart';
 import 'package:care_shield/core/constants.dart';
 
 class MedsScreen extends StatefulWidget {
@@ -257,7 +258,7 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
               ),
               const SizedBox(height: 8),
               Text(
-                'Order refills or browse our health product catalog',
+                'Browse pharmacies and order medications & services',
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 14,
@@ -285,11 +286,11 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                 child: Opacity(
                   opacity: _staggerAnimation.value,
                   child: _buildActionCard(
-                    title: 'Order Refill',
-                    subtitle: 'Refill your existing prescription',
-                    icon: Icons.refresh,
+                    title: 'Browse Pharmacies',
+                    subtitle: 'Explore pharmacies and their products',
+                    icon: Icons.store,
                     color: AppColors.primaryBlue,
-                    onTap: () => _navigateToOrder('Refill'),
+                    onTap: _navigateToPharmacies,
                   ),
                 ),
               ),
@@ -299,11 +300,11 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
                 child: Opacity(
                   opacity: _staggerAnimation.value,
                   child: _buildActionCard(
-                    title: 'Browse Products',
-                    subtitle: 'Explore our health product catalog',
-                    icon: Icons.inventory_2,
+                    title: 'Order Medications',
+                    subtitle: 'Browse pharmacies and place your order',
+                    icon: Icons.medication,
                     color: AppColors.secondaryGreen,
-                    onTap: () => _navigateToOrder('New order'),
+                    onTap: _navigateToPharmacies,
                   ),
                 ),
               ),
@@ -495,10 +496,10 @@ class _MedsScreenState extends State<MedsScreen> with TickerProviderStateMixin {
     );
   }
 
-  void _navigateToOrder(String stage) {
+  void _navigateToPharmacies() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => MedOrderScreen(stage: stage)),
+      MaterialPageRoute(builder: (_) => const PharmaciesScreen()),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:care_shield/app.dart';
 import 'package:care_shield/services/local_storage_service.dart';
 import 'package:care_shield/features/auth/providers/auth_provider.dart';
 import 'package:care_shield/features/meds/providers/meds_provider.dart';
+import 'package:care_shield/features/meds/providers/pharmacy_provider.dart';
 import 'package:care_shield/features/survey/providers/survey_provider.dart';
 import 'package:care_shield/core/theme.dart';
 import 'package:dio/dio.dart';
@@ -26,14 +27,19 @@ Future<void> main() async {
   final apiClient = ApiClient(dio: dio, secureStorage: secureStorage);
 
   // Create providers and initialize their boxes / state BEFORE runApp
-  final authProvider = AuthProvider(apiClient: apiClient, secureStorage: secureStorage);
+  final authProvider = AuthProvider(
+    apiClient: apiClient,
+    secureStorage: secureStorage,
+  );
   final medsProvider = MedsProvider(apiClient: apiClient);
+  final pharmacyProvider = PharmacyProvider(apiClient: apiClient);
   final surveyProvider = SurveyProvider(apiClient: apiClient);
 
   // Run initialization routines (open encrypted boxes, load session, etc.)
   await Future.wait([
     authProvider.init(),
     medsProvider.init(),
+    pharmacyProvider.init(),
     surveyProvider.init(),
   ]);
 
@@ -42,6 +48,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider<AuthProvider>.value(value: authProvider),
         ChangeNotifierProvider<MedsProvider>.value(value: medsProvider),
+        ChangeNotifierProvider<PharmacyProvider>.value(value: pharmacyProvider),
         ChangeNotifierProvider<SurveyProvider>.value(value: surveyProvider),
       ],
       child: const MyApp(),

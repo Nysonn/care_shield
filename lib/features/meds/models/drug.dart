@@ -31,4 +31,17 @@ class Drug {
       requiresPrescription: map['requiresPrescription'] ?? false,
     );
   }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'dosage': dosage,
+      'price': price,
+      'currency': currency,
+      'category': category,
+      'requiresPrescription': requiresPrescription,
+    };
+  }
 }
