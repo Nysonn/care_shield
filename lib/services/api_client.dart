@@ -11,7 +11,7 @@ class ApiClient {
     const envBase = String.fromEnvironment('API_BASE_URL');
     // Use your LAN IP by default for local dev. For Android emulator, you can also use http://10.0.2.2:3000/api
     final defaultBase = Platform.isAndroid
-        ? 'http://192.168.70.23:3000/api'
+        ? 'https://care-shield.onrender.com/api'
         : 'http://192.168.70.23:3000/api';
     dio.options.baseUrl = envBase.isNotEmpty ? envBase : defaultBase;
     dio.interceptors.add(
