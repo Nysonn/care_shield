@@ -112,6 +112,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
   double get _totalAmount => _productsTotal + _servicesTotal + _deliveryFee;
 
   Future<void> _placeOrder() async {
+    // Validate delivery address
     if (_locationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -157,6 +158,7 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       return;
     }
 
+    // Validate delivery and payment options
     if (_selectedDeliveryOption == null || _selectedPaymentMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -171,6 +173,516 @@ class _CheckoutScreenState extends State<CheckoutScreen>
       return;
     }
 
+    // Show confirmation dialog before processing
+    await _showOrderConfirmationDialog();
+  }
+
+  Future<void> _showOrderConfirmationDialog() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        contentPadding: EdgeInsets.zero,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Icon(
+                        Icons.info_outline,
+                        color: AppColors.primaryBlue,
+                        size: 30,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Confirm Your Order',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.text,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Please review your order details before proceeding',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.text.withOpacity(0.6),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Order Details
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Pharmacy Info
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryBlue.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primaryBlue.withOpacity(0.1),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.store,
+                            color: AppColors.primaryBlue,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.pharmacy.name,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                                Text(
+                                  widget.pharmacy.address,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.text.withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Products
+                    if (widget.selectedPharmacyDrugs.isNotEmpty) ...[
+                      Text(
+                        'Products (${widget.selectedPharmacyDrugs.length})',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...widget.selectedPharmacyDrugs
+                          .take(3)
+                          .map(
+                            (pharmDrug) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.medication,
+                                    color: AppColors.primaryBlue,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      pharmDrug.drug.name,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: AppColors.text,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    'UGX ${pharmDrug.price.toStringAsFixed(0)}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.text,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      if (widget.selectedPharmacyDrugs.length > 3)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            '+ ${widget.selectedPharmacyDrugs.length - 3} more item(s)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: AppColors.text.withOpacity(0.6),
+                            ),
+                          ),
+                        ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Services
+                    if (widget.selectedServices.isNotEmpty) ...[
+                      Text(
+                        'Services (${widget.selectedServices.length})',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.text.withOpacity(0.7),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...widget.selectedServices.map(
+                        (service) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.medical_services_outlined,
+                                color: AppColors.secondaryGreen,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  service.service.name,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.text,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                'UGX ${service.price.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    Divider(color: AppColors.text.withOpacity(0.1)),
+                    const SizedBox(height: 12),
+
+                    // Delivery Address
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.location_on_outlined,
+                          color: AppColors.primaryBlue,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Delivery Address',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _locationController.text.trim(),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Delivery Option
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.local_shipping_outlined,
+                          color: AppColors.primaryBlue,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Delivery Option',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_selectedDeliveryOption?.name} • ${_selectedDeliveryOption?.eta}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    // Payment Method
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.payment,
+                          color: AppColors.primaryBlue,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Payment Method',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                _selectedPaymentMethod?.displayName ?? 'N/A',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 16),
+                    Divider(color: AppColors.text.withOpacity(0.1)),
+                    const SizedBox(height: 16),
+
+                    // Amount Breakdown
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Products:',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.text.withOpacity(0.7),
+                              ),
+                            ),
+                            Text(
+                              'UGX ${_productsTotal.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (widget.selectedServices.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Services:',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.text.withOpacity(0.7),
+                                ),
+                              ),
+                              Text(
+                                'UGX ${_servicesTotal.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Delivery Fee:',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.text.withOpacity(0.7),
+                              ),
+                            ),
+                            Text(
+                              'UGX ${_deliveryFee.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.text,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryGreen.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Total Amount:',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.text,
+                                ),
+                              ),
+                              Text(
+                                'UGX ${_totalAmount.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondaryGreen,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              // Action Buttons
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: AppColors.text.withOpacity(0.2),
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.text.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.pop(context, true);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.secondaryGreen,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Confirm Order',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    // Return whether the order was confirmed
+    if (confirmed == true) {
+      await _processOrder();
+    }
+  }
+
+  Future<void> _processOrder() async {
     setState(() => _loading = true);
 
     try {

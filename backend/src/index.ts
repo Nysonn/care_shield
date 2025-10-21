@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import bodyParser from 'body-parser';
 import authRoutes from './routes/auth.routes.js';
 import drugRoutes from './routes/drug.routes.js';
 import medOrderRoutes from './routes/med-order.routes.js';
