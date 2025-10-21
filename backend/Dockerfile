@@ -22,8 +22,11 @@ RUN rm -f .env || true
 
 RUN npm run build
 
+# Copy and make migration script executable
+COPY deploy-migrations.sh /usr/src/app/
+RUN chmod +x /usr/src/app/deploy-migrations.sh
+
 EXPOSE 3000
 
-# Ensure database schema is up-to-date before starting the server
-# If DATABASE_DIRECT_URL is not provided by the platform, fall back to DATABASE_URL so Prisma config validation passes
-CMD sh -c "export DATABASE_DIRECT_URL=\${DATABASE_DIRECT_URL:-\$DATABASE_URL} && npx prisma migrate deploy && npm start"
+# Use the migration script
+CMD ["/usr/src/app/deploy-migrations.sh"]
