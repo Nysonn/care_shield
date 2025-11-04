@@ -8,6 +8,7 @@ import healthCenterRoutes from './routes/health-center.routes.js';
 import surveyTicketRoutes from './routes/survey-ticket.routes.js';
 import pharmacyRoutes from './routes/pharmacy.routes.js';
 import serviceRoutes from './routes/service.routes.js';
+import riderRoutes from './routes/rider.routes.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ app.use('/api/health-centers', healthCenterRoutes);
 app.use('/api/survey-tickets', surveyTicketRoutes);
 app.use('/api/pharmacies', pharmacyRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/riders', riderRoutes);
 
 app.get('/', (req, res) => {
   res.send('CareShield Backend is running!');

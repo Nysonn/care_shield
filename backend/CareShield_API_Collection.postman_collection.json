@@ -1,0 +1,703 @@
+{
+  "info": {
+    "name": "CareShield",
+    "description": "Complete API collection for CareShield backend with Customer and Rider roles",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "12345678"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "riderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pharmacyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "drugId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Customer Signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('authToken', jsonData.token);",
+                  "    pm.environment.set('customerId', jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Jane Doe\",\n  \"phone\": \"+256700123456\",\n  \"email\": \"jane.doe@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
+            "description": "Register a new customer account"
+          },
+          "response": []
+        },
+        {
+          "name": "Rider Signup",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('authToken', jsonData.token);",
+                  "    pm.environment.set('riderId', jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"John Rider\",\n  \"phone\": \"+256700987654\",\n  \"email\": \"john.rider@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"rider\",\n  \"vehicleType\": \"Boda\",\n  \"licenseNumber\": \"UG12345ABC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signup",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "signup"]
+            },
+            "description": "Register a new rider account with vehicle details"
+          },
+          "response": []
+        },
+        {
+          "name": "Customer Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('authToken', jsonData.token);",
+                  "    pm.environment.set('customerId', jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+256700123456\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as a customer"
+          },
+          "response": []
+        },
+        {
+          "name": "Rider Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('authToken', jsonData.token);",
+                  "    pm.environment.set('riderId', jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+256700987654\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login as a rider"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current user profile (requires authentication)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Authentication endpoints for both customers and riders"
+    },
+    {
+      "name": "Customer - Pharmacies",
+      "item": [
+        {
+          "name": "Get All Pharmacies",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pharmacies?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacies"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get all pharmacies with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Pharmacies by Drug",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pharmacies/search?drugName=Paracetamol",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacies", "search"],
+              "query": [
+                {
+                  "key": "drugName",
+                  "value": "Paracetamol"
+                }
+              ]
+            },
+            "description": "Search pharmacies that have a specific drug"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Drugs Across Pharmacies",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pharmacies/drugs/search?query=Aspirin",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacies", "drugs", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "Aspirin"
+                }
+              ]
+            },
+            "description": "Search for drugs across all pharmacies"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pharmacy By ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('pharmacyId', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pharmacies/{{pharmacyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacies", "{{pharmacyId}}"]
+            },
+            "description": "Get details of a specific pharmacy"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pharmacy Drugs",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pharmacies/{{pharmacyId}}/drugs",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacies", "{{pharmacyId}}", "drugs"]
+            },
+            "description": "Get all drugs available at a specific pharmacy"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pharmacy Services",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pharmacies/{{pharmacyId}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacies", "{{pharmacyId}}", "services"]
+            },
+            "description": "Get all services offered by a specific pharmacy"
+          },
+          "response": []
+        }
+      ],
+      "description": "Pharmacy browsing and search endpoints for customers"
+    },
+    {
+      "name": "Customer - Drugs",
+      "item": [
+        {
+          "name": "Get All Drugs",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.environment.set('drugId', jsonData[0].id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugs",
+              "host": ["{{baseUrl}}"],
+              "path": ["drugs"]
+            },
+            "description": "Get all available drugs"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Drug By ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drugs/{{drugId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["drugs", "{{drugId}}"]
+            },
+            "description": "Get details of a specific drug"
+          },
+          "response": []
+        }
+      ],
+      "description": "Drug information endpoints"
+    },
+    {
+      "name": "Customer - Services",
+      "item": [
+        {
+          "name": "Get All Services",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/services",
+              "host": ["{{baseUrl}}"],
+              "path": ["services"]
+            },
+            "description": "Get all available services"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Services By Category",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/services/category/Counseling",
+              "host": ["{{baseUrl}}"],
+              "path": ["services", "category", "Counseling"]
+            },
+            "description": "Get services filtered by category"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Service By ID",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/services/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["services", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "service-id-here"
+                }
+              ]
+            },
+            "description": "Get details of a specific service"
+          },
+          "response": []
+        }
+      ],
+      "description": "Service information endpoints"
+    },
+    {
+      "name": "Customer - Orders",
+      "item": [
+        {
+          "name": "Create Med Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('orderId', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pharmacyId\": \"{{pharmacyId}}\",\n  \"stage\": \"Ordered\",\n  \"location\": \"Mbarara, Kakoba Division, Near Main Road\",\n  \"eta\": \"30-45 minutes\",\n  \"totalAmount\": 45000,\n  \"deliveryFee\": 5000,\n  \"drugs\": [\n    {\n      \"drugId\": \"{{drugId}}\"\n    }\n  ],\n  \"services\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/med-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["med-orders"]
+            },
+            "description": "Create a new medication order (requires customer authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/med-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["med-orders"]
+            },
+            "description": "Get all orders for the authenticated customer"
+          },
+          "response": []
+        }
+      ],
+      "description": "Medication order endpoints for customers"
+    },
+    {
+      "name": "Customer - Health Centers",
+      "item": [
+        {
+          "name": "Get All Health Centers",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health-centers",
+              "host": ["{{baseUrl}}"],
+              "path": ["health-centers"]
+            },
+            "description": "Get all health centers"
+          },
+          "response": []
+        }
+      ],
+      "description": "Health center information endpoints"
+    },
+    {
+      "name": "Customer - Survey Tickets",
+      "item": [
+        {
+          "name": "Create Survey Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symptoms\": [\"Fever\", \"Headache\", \"Fatigue\"],\n  \"severity\": \"Moderate\",\n  \"notes\": \"Symptoms started 2 days ago. Need medical consultation.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/survey-tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["survey-tickets"]
+            },
+            "description": "Create a new survey ticket for health assessment (requires authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Survey Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/survey-tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["survey-tickets"]
+            },
+            "description": "Get all survey tickets for the authenticated user"
+          },
+          "response": []
+        }
+      ],
+      "description": "Survey ticket endpoints for health assessments"
+    },
+    {
+      "name": "Rider - Order Management",
+      "item": [
+        {
+          "name": "Get Pending Orders (Pool)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/riders/pending-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "pending-orders"]
+            },
+            "description": "Get all pending orders available for riders to accept. Shows customer name, phone, drugs, and delivery location."
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Order",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/riders/orders/{{orderId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "orders", "{{orderId}}", "accept"]
+            },
+            "description": "Accept a pending order. Once accepted, the order will be assigned to this rider and removed from the pool."
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Accepted Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/riders/accepted-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "accepted-orders"]
+            },
+            "description": "Get all orders accepted by this rider that haven't been delivered yet. Includes customer contact info for delivery."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Order as Delivered",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/riders/orders/{{orderId}}/deliver",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "orders", "{{orderId}}", "deliver"]
+            },
+            "description": "Mark an order as delivered after completing the delivery"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/riders/order-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["riders", "order-history"]
+            },
+            "description": "Get all delivered orders by this rider (delivery history)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Rider-specific endpoints for managing deliveries. Riders can view pending orders, accept them, and mark them as delivered."
+    }
+  ]
+}

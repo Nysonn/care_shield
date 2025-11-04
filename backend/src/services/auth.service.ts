@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 
 export const signup = async (data: any) => {
-  const { fullName, phone, email, password } = data;
+  const { fullName, phone, email, password, role, vehicleType, licenseNumber } = data;
 
   const existingUser = await prisma.user.findUnique({
     where: { phone },
@@ -13,6 +13,16 @@ export const signup = async (data: any) => {
 
   if (existingUser) {
     throw new Error('User with this phone number already exists');
+  }
+
+  // Validate rider-specific fields
+  if (role === 'rider') {
+    if (!vehicleType || !licenseNumber) {
+      throw new Error('Vehicle type and license number are required for riders');
+    }
+    if (!['Boda', 'My Car'].includes(vehicleType)) {
+      throw new Error('Vehicle type must be either "Boda" or "My Car"');
+    }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -23,11 +33,14 @@ export const signup = async (data: any) => {
       phone,
       email,
       password: hashedPassword,
+      role: role || 'customer',
+      vehicleType: role === 'rider' ? vehicleType : null,
+      licenseNumber: role === 'rider' ? licenseNumber : null,
     },
   });
 
   // issue token on signup for better UX
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
+  const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET as string, {
     expiresIn: '7d',
   });
 
@@ -53,7 +66,7 @@ export const login = async (data: any) => {
     throw new Error('Invalid phone number or password');
   }
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, {
+  const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET as string, {
     expiresIn: '7d', // Extended to 7 days for better user experience
   });
 
@@ -71,6 +84,9 @@ export const getUserProfile = async (userId: string) => {
       fullName: true,
       phone: true,
       email: true,
+      role: true,
+      vehicleType: true,
+      licenseNumber: true,
       createdAt: true,
       updatedAt: true,
     },

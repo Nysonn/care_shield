@@ -7,6 +7,17 @@ const signupSchema = Joi.object({
   phone: Joi.string().required(),
   email: Joi.string().email().optional(),
   password: Joi.string().min(6).required(),
+  role: Joi.string().valid('customer', 'rider').optional().default('customer'),
+  vehicleType: Joi.string().valid('Boda', 'My Car').when('role', {
+    is: 'rider',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
+  licenseNumber: Joi.string().when('role', {
+    is: 'rider',
+    then: Joi.required(),
+    otherwise: Joi.optional(),
+  }),
 });
 
 const loginSchema = Joi.object({

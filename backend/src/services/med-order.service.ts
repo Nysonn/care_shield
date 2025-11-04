@@ -57,6 +57,7 @@ export const createMedOrder = async (userId: string, data: CreateOrderData) => {
       eta,
       totalAmount,
       deliveryFee,
+      status: 'pending', // Default status for new orders
       userId,
       pharmacyId,
       drugs: {

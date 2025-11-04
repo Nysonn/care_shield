@@ -9,14 +9,18 @@ generator client {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  fullName    String
-  phone       String   @unique
-  email       String?  @unique
-  password    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  orders      MedOrder[]
+  id            String   @id @default(uuid())
+  fullName      String
+  phone         String   @unique
+  email         String?  @unique
+  password      String
+  role          String   @default("customer") // "customer" or "rider"
+  vehicleType   String?  // For riders: "Boda" or "My Car"
+  licenseNumber String?  // For riders
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  orders        MedOrder[] @relation("CustomerOrders")
+  riderOrders   MedOrder[] @relation("RiderOrders")
   surveyTickets SurveyTicket[]
 }
 
@@ -113,15 +117,18 @@ model MedOrder {
   id           String   @id @default(uuid())
   stage        String
   location     String
+  status       String   @default("pending") // "pending", "accepted", "delivered"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   eta          String
   totalAmount  Float
   deliveryFee  Float
   pharmacyId   String?
+  riderId      String?
   
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation("CustomerOrders", fields: [userId], references: [id])
   userId       String
+  rider        User?    @relation("RiderOrders", fields: [riderId], references: [id])
   pharmacy     Pharmacy? @relation(fields: [pharmacyId], references: [id])
   drugs        Drug[]
   services     OrderService[]
@@ -130,6 +137,8 @@ model MedOrder {
   
   @@index([pharmacyId])
   @@index([userId])
+  @@index([riderId])
+  @@index([status])
 }
 
 model ArchivedOrder {
