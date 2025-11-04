@@ -18,7 +18,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:3000/api",
+      "value": "https://care-shield.onrender.com/api",
       "type": "string"
     },
     {
@@ -698,6 +698,66 @@
         }
       ],
       "description": "Rider-specific endpoints for managing deliveries. Riders can view pending orders, accept them, and mark them as delivered."
+    },
+    {
+      "name": "Admin - Database Seeding",
+      "item": [
+        {
+          "name": "Seed Base Data (Drugs & Health Centers)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-admin-secret",
+                "value": "your-super-secret-admin-key-change-this",
+                "description": "Admin secret for authentication"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/seed-base",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "seed-base"]
+            },
+            "description": "Seeds 21 drugs (HIV medications, contraceptives, testing kits, health products) and 4 health centers in Mbarara. This should be run FIRST before seeding pharmacies."
+          },
+          "response": []
+        },
+        {
+          "name": "Seed Pharmacies & Relationships",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-admin-secret",
+                "value": "your-super-secret-admin-key-change-this",
+                "description": "Admin secret for authentication"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/seed-pharmacies",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "seed-pharmacies"]
+            },
+            "description": "Seeds 10 pharmacies in Mbarara, 8 services, and creates relationships between pharmacies-drugs and pharmacies-services with varying prices. Run this AFTER seeding base data."
+          },
+          "response": []
+        }
+      ],
+      "description": "⚠️ ADMIN ONLY - One-time database seeding endpoints. Requires x-admin-secret header. Use these to populate your production database after a reset."
     }
   ]
 }
